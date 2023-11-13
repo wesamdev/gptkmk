@@ -21,6 +21,14 @@ class ControllerConfigurator:
         table_frame = ttk.Frame(self.master)
         table_frame.pack()
 
+        columns = ["Action", "Assigned Key"]
+
+        self.tree = ttk.Treeview(table_frame, columns=columns, show="headings")
+        for col in columns:
+            self.tree.heading(col, text=col)
+        self.tree.column("Action", width=150)
+        self.tree.column("Assigned Key", width=150)
+
         actions = [
             "Start", "Guide","Select", "A", "B", "X", "Y",
             "L1", "L2", "L3", "R1", "R2", "R3",
@@ -30,14 +38,12 @@ class ControllerConfigurator:
         ]
 
         for action in actions:
-            row_frame = ttk.Frame(table_frame)
-            row_frame.pack(side=tk.TOP)
+            self.tree.insert("", "end", values=(action, "None"))
 
-            label = ttk.Label(row_frame, text=action)
-            label.pack(side=tk.LEFT)
+        self.tree.pack()
 
-            key_button = ttk.Button(row_frame, text="Assign Key", command=lambda a=action: self.assign_key(a))
-            key_button.pack(side=tk.LEFT)
+        assign_button = ttk.Button(self.master, text="Assign Key", command=self.assign_selected_key)
+        assign_button.pack(pady=10)
 
     def create_generate_button(self):
         generate_button = ttk.Button(self.master, text="Generate .gptk File", command=self.generate_gptk_file)
@@ -49,22 +55,40 @@ class ControllerConfigurator:
 
         if key:
             # Register a hotkey for the assigned key and associate it with the action
-            keyboard.add_hotkey(key, lambda a=action: self.perform_action(a))
+            try:
+                keyboard.add_hotkey(key, lambda a=action: self.perform_action(a))
+            except:
+                print("Warning: You Not add key!")
             self.key_mappings[action] = key  # Store the key mapping
             print(f"Key {key} assigned for {action}")
+            self.update_table()
+
+    def assign_selected_key(self):
+        selected_item = self.tree.selection()
+        if selected_item:
+            action = self.tree.item(selected_item, 'values')[0]
+            self.assign_key(action)
 
     def perform_action(self, action):
         # Replace this with your logic to perform the action associated with the key
         print(f"Performing action: {action}")
+
+    def update_table(self):
+        for action, key in self.key_mappings.items():
+            for child in self.tree.get_children():
+                if self.tree.item(child, 'values')[0] == action:
+                    self.tree.item(child, values=(action, key))
+                    break
 
     def generate_gptk_file(self):
         with open("remap.gptk", "w") as file:
             file.write("# Remap Configuration Made By GPTKMK\n\n")
 
             for action, key in self.key_mappings.items():
-                file.write(f"{str(action).lower().replace(" ", "_")} = {str(key).lower()}\n")
+                file.write(f"{str(action).lower().replace(' ', '_')} = {str(key).lower()}\n")
 
 if __name__ == "__main__":
     root = tk.Tk()
+    root.resizable(False, False)
     app = ControllerConfigurator(root)
     root.mainloop()
