@@ -6,7 +6,7 @@ from tkinter import ttk
 class ControllerConfigurator:
     def __init__(self, master):
         self.master = master
-        master.title("gptlmk v0.1 alpha test ver")
+        master.title("gptkmk v0.1 alpha test ver")
 
         self.key_mappings = {}  # Dictionary to store key mappings
 
